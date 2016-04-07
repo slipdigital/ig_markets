@@ -33,6 +33,19 @@ describe IGMarkets::DealingPlatform::MarketMethods do
     expect(platform.markets['ABCDEF']).to eq(IGMarkets::Market.from(get_result[:market_details])[0])
   end
 
+  it 'can retrieve a market from an EPIC with DFB expiry' do
+    get_result = {
+        market_details: [{
+                             dealing_rules: build(:market_dealing_rules),
+                             instrument: build(:instrument_dfb),
+                             snapshot: build(:market_snapshot)
+                         }]
+    }
+
+    expect(session).to receive(:get).with('markets?epics=ABCDEF', IGMarkets::API_V2).and_return(get_result)
+    expect(platform.markets['ABCDEF']).to eq(IGMarkets::Market.from(get_result[:market_details])[0])
+  end
+
   it 'can search for markets' do
     markets = [build(:market_overview)]
 
