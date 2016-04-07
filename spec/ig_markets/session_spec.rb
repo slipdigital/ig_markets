@@ -17,7 +17,7 @@ describe IGMarkets::Session do
     end
 
     it 'can sign in' do
-      expect(response).to receive(:code).twice.and_return(200)
+      expect(response).to receive(:code).exactly(4).times.and_return(200)
       expect(response).to receive(:headers).and_return(cst: '1', x_security_token: '2')
       expect(response).to receive(:body).twice.and_return(
         { encryptionKey: Base64.strict_encode64(OpenSSL::PKey::RSA.new(256).to_pem), timeStamp: '1000' }.to_json,
@@ -70,6 +70,26 @@ describe IGMarkets::Session do
     it 'fails when the HTTP response is not 200' do
       expect(response).to receive_messages(code: 404, body: { errorCode: '1' }.to_json)
       expect(rest_client).to receive(:execute).with(params(:get, 'url')).and_raise(RestClient::Exception, response)
+      expect { session.get('url', IGMarkets::API_V1) }.to raise_error do |error|
+        expect(error).to be_a(IGMarkets::RequestFailedError)
+        expect(error.error).to eq('1')
+        expect(error.http_code).to eq(404)
+      end
+    end
+
+    it 'handles when the HTTP response is not JSON' do
+      expect(response).to receive_messages(code: 404, body: 'not_valid_json')
+      expect(rest_client).to receive(:execute).with(params(:get, 'url')).and_raise(RestClient::Exception, response)
+      expect { session.get('url', IGMarkets::API_V1) }.to raise_error(IGMarkets::RequestFailedError)
+    end
+
+    it 'converts a SocketError into a RequestFailedError' do
+      expect(rest_client).to receive(:execute).with(params(:get, 'url')).and_raise(SocketError)
+      expect { session.get('url', IGMarkets::API_V1) }.to raise_error(IGMarkets::RequestFailedError)
+    end
+
+    it 'converts a RestClient::Exception that has no response into a RequestFailedError' do
+      expect(rest_client).to receive(:execute).with(params(:get, 'url')).and_raise(RestClient::Exception)
       expect { session.get('url', IGMarkets::API_V1) }.to raise_error(IGMarkets::RequestFailedError)
     end
 
@@ -83,7 +103,7 @@ describe IGMarkets::Session do
       execute_params = params :post, 'url', id: 1
       execute_params[:headers]['_method'] = :delete
 
-      expect(response).to receive_messages(code: 200, body: '')
+      expect(response).to receive_messages(code: 204, body: '')
       expect(rest_client).to receive(:execute).with(execute_params).and_return(response)
       expect(session.delete('url', { id: 1 }, IGMarkets::API_V1)).to eq({})
     end

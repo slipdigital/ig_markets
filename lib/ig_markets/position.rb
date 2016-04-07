@@ -11,7 +11,7 @@ module IGMarkets
     attribute :direction, Symbol, allowed_values: [:buy, :sell]
     attribute :level, Float
     attribute :limit_level, Float
-    attribute :size, Float
+    attribute :size, Fixnum
     attribute :stop_level, Float
     attribute :trailing_step, Float
     attribute :trailing_stop_distance, Fixnum
@@ -21,6 +21,54 @@ module IGMarkets
     # Returns whether this position has a trailing stop.
     def trailing_stop?
       !trailing_step.nil? && !trailing_stop_distance.nil?
+    end
+
+    # Returns the favorable difference in the price between {#level} and the current market price as stored in
+    # {#market}. If {#direction} is `:buy` and the market has since risen then this method will return a positive value,
+    # but if {#direction} is `:sell` and the market has since risen then this method will return a negative value.
+    #
+    # @return [Float]
+    def price_delta
+      if direction == :buy
+        market.bid - level
+      elsif direction == :sell
+        level - market.offer
+      end
+    end
+
+    # Returns whether this position is currently profitable based on the current market state as stored in {#market}.
+    def profitable?
+      price_delta > 0.0
+    end
+
+    # Returns this position's current profit or loss, denominated in its {#currency}, and based on the current market
+    # state as stored in {#market}. {#formatted_profit_loss} can be used to get a human-readable representation of this
+    # value.
+    #
+    # @return [Float]
+    def profit_loss
+      price_delta * size * market.lot_size * market.scaling_factor
+    end
+
+    # Returns a human-readable string describing this position's current profit or loss, denominated in its {#currency},
+    # and based on the current market state as stored in {#market}. Some examples of the format of the return value:
+    #
+    # - `"USD -130.40"`
+    # - `"AUD 539.10"`
+    # - `"JPY 3560"`
+    #
+    # @return [String]
+    def formatted_profit_loss
+      format_string = (currency == 'JPY' ? '%.0f' : '%.2f')
+      "#{currency} #{format format_string, profit_loss}"
+    end
+
+    # Returns this position's {#size} as a string prefixed with a `+` if {#direction} is `:buy`, or a `-` if
+    # {#direction} is `:sell`.
+    #
+    # @return [String]
+    def formatted_size
+      "#{{ buy: '+', sell: '-' }.fetch(direction)}#{size}"
     end
 
     # Closes this position. If called with no options then this position will be fully closed at current market prices,
@@ -47,13 +95,10 @@ module IGMarkets
     def close(options = {})
       options[:deal_id] = deal_id
       options[:direction] = { buy: :sell, sell: :buy }.fetch(direction)
-
-      options[:order_type] ||= :market
       options[:size] ||= size
-      options[:time_in_force] = :execute_and_eliminate if options[:order_type] == :market
 
-      model = PositionCloseAttributes.new options
-      model.validate!
+      model = PositionCloseAttributes.build options
+      model.validate
 
       payload = PayloadFormatter.format model
 
@@ -89,7 +134,7 @@ module IGMarkets
     # Validates the internal consistency of the `:order_type`, `:quote_id` and `:level` attributes.
     #
     # @param [Hash] attributes The attributes hash to validate.
-    def self.validate_order_type_constraints!(attributes)
+    def self.validate_order_type_constraints(attributes)
       if (attributes[:order_type] == :quote) == attributes[:quote_id].nil?
         raise ArgumentError, 'set quote_id if and only if order_type is :quote'
       end
@@ -99,8 +144,6 @@ module IGMarkets
       end
     end
 
-    private
-
     # Internal model used by {#close}.
     class PositionCloseAttributes < Model
       attribute :deal_id
@@ -108,17 +151,29 @@ module IGMarkets
       attribute :level, Float
       attribute :order_type, Symbol, allowed_values: [:limit, :market, :quote]
       attribute :quote_id
-      attribute :size, Float
+      attribute :size, Fixnum
       attribute :time_in_force, Symbol, allowed_values: [:execute_and_eliminate, :fill_or_kill]
 
       # Runs a series of validations on this model's attributes to check whether it is ready to be sent to the IG
       # Markets API.
-      def validate!
+      def validate
         [:deal_id, :direction, :order_type, :size, :time_in_force].each do |attribute|
           raise ArgumentError, "#{attribute} attribute must be set" if attributes[attribute].nil?
         end
 
-        Position.validate_order_type_constraints! attributes
+        Position.validate_order_type_constraints attributes
+      end
+
+      # Builds a new {PositionCloseAttributes} instance with the given attributes and applies relevant defaults.
+      #
+      # @param [Hash] attributes
+      #
+      # @return [PositionCloseAttributes]
+      def self.build(attributes)
+        new(attributes).tap do |model|
+          model.order_type ||= :market
+          model.time_in_force = :execute_and_eliminate if model.order_type == :market
+        end
       end
     end
 

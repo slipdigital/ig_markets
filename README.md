@@ -24,21 +24,6 @@ Includes support for:
 
 An IG Markets production or demo trading account is needed in order to use this gem.
 
-[gem-link]: https://rubygems.org/gems/ig_markets
-[gem-badge]: https://badge.fury.io/rb/ig_markets.svg
-[travis-ci-link]: http://travis-ci.org/rviney/ig_markets
-[travis-ci-badge]: https://travis-ci.org/rviney/ig_markets.svg?branch=master
-[test-coverage-link]: https://codeclimate.com/github/rviney/ig_markets/coverage
-[test-coverage-badge]: https://codeclimate.com/github/rviney/ig_markets/badges/coverage.svg
-[code-climate-link]: https://codeclimate.com/github/rviney/ig_markets
-[code-climate-badge]: https://codeclimate.com/github/rviney/ig_markets/badges/gpa.svg
-[dependencies-link]: https://gemnasium.com/rviney/ig_markets
-[dependencies-badge]: https://gemnasium.com/rviney/ig_markets.svg
-[documentation-link]: https://inch-ci.org/github/rviney/ig_markets
-[documentation-badge]: http://inch-ci.org/github/rviney/ig_markets.svg?branch=master
-[license-link]: https://github.com/rviney/ig_markets/blob/master/LICENSE.md
-[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
-
 ## License
 
 Licensed under the MIT license. You must read and agree to its terms to use this software.
@@ -54,6 +39,7 @@ Add the following to your `Gemfile`
 ```ruby
 gem 'ig_markets', git: 'https://github.com/rviney/ig_markets.git'
 ```
+
 Then run
 
 ```ruby
@@ -83,6 +69,7 @@ ig.deal_confirmation 'deal_reference'
 ig.positions.all
 ig.positions.create currency_code: 'USD', direction: :buy, epic: 'CS.D.EURUSD.CFD.IP', size: 2
 ig.positions['deal_id']
+ig.positions['deal_id'].profit_loss
 ig.positions['deal_id'].update limit_level: 1.2, stop_level: 1.1
 ig.positions['deal_id'].close
 
@@ -130,3 +117,18 @@ API documentation is available [here](http://www.rubydoc.info/github/rviney/ig_m
 ## Contributors
 
 Gem created by Richard Viney. All contributions welcome.
+
+[gem-link]: https://rubygems.org/gems/ig_markets
+[gem-badge]: https://badge.fury.io/rb/ig_markets.svg
+[travis-ci-link]: http://travis-ci.org/rviney/ig_markets
+[travis-ci-badge]: https://travis-ci.org/rviney/ig_markets.svg?branch=master
+[test-coverage-link]: https://codeclimate.com/github/rviney/ig_markets/coverage
+[test-coverage-badge]: https://codeclimate.com/github/rviney/ig_markets/badges/coverage.svg
+[code-climate-link]: https://codeclimate.com/github/rviney/ig_markets
+[code-climate-badge]: https://codeclimate.com/github/rviney/ig_markets/badges/gpa.svg
+[dependencies-link]: https://gemnasium.com/rviney/ig_markets
+[dependencies-badge]: https://gemnasium.com/rviney/ig_markets.svg
+[documentation-link]: https://inch-ci.org/github/rviney/ig_markets
+[documentation-badge]: https://inch-ci.org/github/rviney/ig_markets.svg?branch=master
+[license-link]: https://github.com/rviney/ig_markets/blob/master/LICENSE.md
+[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
