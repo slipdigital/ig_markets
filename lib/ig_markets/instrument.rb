@@ -12,7 +12,7 @@ module IGMarkets
 
     # Contains details on the expiry details of an instrument. Returned by {#expiry_details}.
     class ExpiryDetails < Model
-      attribute :last_dealing_date, DateTime, format: '%Y/%m/%d %H:%M:%S'
+      attribute :last_dealing_date, DateTime, format: '%Y-%m-%dT%H:%M'
       attribute :settlement_info
     end
 

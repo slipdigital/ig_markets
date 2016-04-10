@@ -73,7 +73,7 @@ module IGMarkets
       end_date_time = format_date_time end_date_time
 
       url = "prices/#{instrument.epic}/#{resolution.to_s.upcase}/#{start_date_time}/#{end_date_time}"
-
+                    puts url
       HistoricalPriceResult.from @dealing_platform.session.get(url, API_V2)
     end
 
@@ -93,7 +93,7 @@ module IGMarkets
     #
     # @param [DateTime] date_time The `DateTime` to format.
     def format_date_time(date_time)
-      date_time.strftime '%Y-%m-%dT%H:%M:%S'
+      date_time.strftime '%Y-%m-%d %H:%M:%S'
     end
   end
 end
