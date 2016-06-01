@@ -26,15 +26,41 @@ module IGMarkets
     def sign_in
       validate_authentication
 
-      payload = { identifier: username, password: password_encryptor.encrypt(password), encryptedPassword: true }
+      payload = {identifier: username, password: password_encryptor.encrypt(password), encryptedPassword: true}
 
-      sign_in_result = request method: :post, url: 'session', payload: payload, api_version: API_V1
+      @sign_in = request method: :post, url: 'session', payload: payload, api_version: API_V1
+      @sign_in_result = @sign_in[:result]
 
-      headers = sign_in_result.fetch(:response).headers
+      headers = @sign_in.fetch(:response).headers
+
       @cst = headers.fetch :cst
       @x_security_token = headers.fetch :x_security_token
 
       nil
+    end
+
+    def lightstreamer_endpoint
+      if alive?
+        @sign_in_result[:lightstreamer_endpoint]
+      else
+        fail 'Sign into IG first'
+      end
+    end
+
+    def current_account_id
+      if alive?
+        @sign_in_result[:current_account_id]
+      else
+        fail 'Sign into IG first'
+      end
+    end
+
+    def currency_symbol
+      if alive?
+        @sign_in_result[:currency_symbol]
+      else
+        fail 'Sign into IG first'
+      end
     end
 
     # Signs out of IG Markets, ending the current session (if any). If an error occurs then {RequestFailedError} will be
@@ -105,8 +131,8 @@ module IGMarkets
     private
 
     HOST_URLS = {
-      demo: 'https://demo-api.ig.com/gateway/deal/',
-      production: 'https://api.ig.com/gateway/deal/'
+        demo: 'https://demo-api.ig.com/gateway/deal/',
+        production: 'https://api.ig.com/gateway/deal/'
     }.freeze
 
     def validate_authentication
@@ -134,7 +160,7 @@ module IGMarkets
       response = execute_request options
       result = process_response response
 
-      { response: response, result: result }
+      {response: response, result: result}
     end
 
     def request_headers(options)
